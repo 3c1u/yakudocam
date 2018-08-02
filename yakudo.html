@@ -1,0 +1,61 @@
+<meta charset="utf-8">
+<style>
+#contentView {
+  border:1px solid black;
+};
+
+#contentView2 {
+  border:1px solid black;
+  float:left;
+};
+</style>
+<h1>Yakudo cam</h1>
+<p>Note: You should accept the camera in order to "yakudo." Have fun!</p>
+<canvas id="contentView" width="640" height="480"></canvas>
+<script type="x-shader/x-vertex" id="2d-vertex-shader">
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+attribute vec2 pos;
+attribute vec2 vertex;
+uniform   vec2 res;
+
+varying   vec2 v_vertex;
+
+void main(void) {
+  vec2 zeroToOne = pos / res;
+  vec2 zeroToTwo = zeroToOne * 2.0;
+  vec2 clipSpace = zeroToTwo - 1.0;
+  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+  v_vertex = vec2(1.0 - vertex.x, vertex.y);
+}
+</script>
+<script type="x-shader/x-fragment" id="2d-fragment-shader">
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform sampler2D u_image;
+varying vec2      v_vertex;
+float wFrag = 1.0 / 640.0;
+float hFrag = 1.0 / 480.0;
+const
+float yRad  = 30.0;
+void main(void) {
+  vec4  destColor = vec4(0.0);
+  float tWeight   = 0.0;
+  float nFrag = 2.0 / yRad;
+
+  for (float i = 0.0; i <= yRad; i++) {
+    float pos    = (i * nFrag - 1.0);
+    float weight = (1.0 - pos);
+    tWeight = tWeight + weight;
+    destColor = destColor + texture2D(u_image,
+                                      v_vertex + vec2(0.0, hFrag) * yRad * pos) * weight;
+  }
+
+  gl_FragColor = vec4(destColor.xyz / tWeight, 1.0);
+}
+</script>
+<script type="text/javascript" src="yakudo.js"></script>
